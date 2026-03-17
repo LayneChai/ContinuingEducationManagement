@@ -160,7 +160,7 @@ function statusText(status) {
           <div class="meta-row">
             <span>教师 {{ courseDetail.teacherName }}</span>
             <span>分类 {{ courseDetail.categoryName || '未分类' }}</span>
-            <span>要求学时 {{ courseDetail.requiredHours }}</span>
+            <span>要求时长 {{ courseDetail.requiredHours }} 小时</span>
             <span>课程状态 {{ statusText(courseDetail.status) }}</span>
             <span>审核状态 {{ auditText(courseDetail.auditStatus) }}</span>
           </div>
@@ -178,7 +178,7 @@ function statusText(status) {
               <div class="lesson-list">
                 <div v-for="lesson in chapter.lessons || []" :key="lesson.id" class="lesson-item">
                   <strong>{{ lesson.title }}</strong>
-                  <span>{{ ['视频', '文档', '图文'][lesson.lessonType - 1] || '未知类型' }} · {{ lesson.durationSeconds || 0 }} 秒</span>
+                  <span>{{ ['视频', '文档', '图文'][lesson.lessonType - 1] || '未知类型' }} · {{ Math.round(Number(lesson.durationSeconds || 0) / 60) }} 分钟</span>
                 </div>
               </div>
             </section>

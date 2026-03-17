@@ -1,17 +1,42 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import DOMPurify from 'dompurify'
+import { marked } from 'marked'
 
 import { streamStudentAiChat } from '../../api/ai'
+import { getStudentCoursesApi } from '../../api/course'
 
-const courseId = ref(1)
+const courseId = ref(null)
+const courses = ref([])
 const message = ref('请帮我解释这门课的核心知识点')
-const chunks = ref([])
+const answer = ref('')
 const sessionId = ref(null)
 const streaming = ref(false)
 
+marked.setOptions({ breaks: true, gfm: true })
+
+const renderedAnswer = computed(() => DOMPurify.sanitize(marked.parse(answer.value || '')))
+
+onMounted(loadCourses)
+
+async function loadCourses() {
+  try {
+    courses.value = await getStudentCoursesApi()
+    if (!courseId.value && courses.value.length) {
+      courseId.value = courses.value[0].id
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '课程加载失败')
+  }
+}
+
 async function sendMessage() {
-  chunks.value = []
+  if (!courseId.value) {
+    ElMessage.warning('请先选择已报名课程')
+    return
+  }
+  answer.value = ''
   streaming.value = true
   try {
     const response = await streamStudentAiChat({
@@ -28,20 +53,20 @@ async function sendMessage() {
       const { value, done } = await reader.read()
       if (done) break
       buffer += decoder.decode(value, { stream: true })
-      const events = buffer.split('\n\n')
+      const events = buffer.split(/\r?\n\r?\n/)
       buffer = events.pop() || ''
 
       events.forEach((eventBlock) => {
         let eventName = 'message'
         let data = ''
-        eventBlock.split('\n').forEach((line) => {
+        eventBlock.split(/\r?\n/).forEach((line) => {
           if (line.startsWith('event:')) eventName = line.slice(6).trim()
-          if (line.startsWith('data:')) data += line.slice(5).trim()
+          if (line.startsWith('data:')) data += line.slice(5)
         })
         if (eventName === 'session') {
           sessionId.value = Number(data)
         } else if (eventName === 'message') {
-          chunks.value.push(data)
+          answer.value += data
         } else if (eventName === 'error') {
           ElMessage.error(data)
         }
@@ -68,8 +93,10 @@ async function sendMessage() {
       <article class="app-card panel-block">
         <h3>发起对话</h3>
         <el-form label-position="top">
-          <el-form-item label="课程 ID">
-            <el-input-number v-model="courseId" :min="1" />
+          <el-form-item label="已报名课程">
+            <el-select v-model="courseId" placeholder="请选择已报名课程" style="width: 100%" no-data-text="暂无已报名课程">
+              <el-option v-for="item in courses" :key="item.id" :label="item.title" :value="item.id" />
+            </el-select>
           </el-form-item>
           <el-form-item label="问题">
             <el-input v-model="message" type="textarea" :rows="5" />
@@ -81,8 +108,8 @@ async function sendMessage() {
       <article class="app-card panel-block">
         <h3>回答内容</h3>
         <div class="chat-stream">
-          <p v-if="!chunks.length" class="empty">等待 AI 返回内容...</p>
-          <p v-else>{{ chunks.join('') }}</p>
+          <p v-if="!answer" class="empty">等待 AI 返回内容...</p>
+          <div v-else class="markdown-body" v-html="renderedAnswer"></div>
         </div>
       </article>
     </section>
@@ -101,10 +128,52 @@ async function sendMessage() {
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid var(--line-soft);
   line-height: 1.8;
-  white-space: pre-wrap;
 }
 
 .empty {
+  color: var(--text-secondary);
+}
+
+.markdown-body :deep(p) {
+  margin: 0 0 12px;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+.markdown-body :deep(li) {
+  margin-bottom: 6px;
+}
+
+.markdown-body :deep(pre) {
+  margin: 12px 0;
+  padding: 14px;
+  overflow: auto;
+  border-radius: 12px;
+  background: rgba(34, 41, 47, 0.92);
+  color: #f3f5f7;
+}
+
+.markdown-body :deep(code) {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(161, 100, 47, 0.12);
+  font-family: Consolas, 'Courier New', monospace;
+}
+
+.markdown-body :deep(pre code) {
+  padding: 0;
+  background: transparent;
+}
+
+.markdown-body :deep(blockquote) {
+  margin: 12px 0;
+  padding: 8px 14px;
+  border-left: 4px solid rgba(161, 100, 47, 0.55);
+  background: rgba(161, 100, 47, 0.08);
   color: var(--text-secondary);
 }
 

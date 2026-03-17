@@ -14,5 +14,9 @@ public interface CertificateService {
 
     List<CertificateApplyVo> adminApplications(Integer status);
 
+    List<CertificateApplyVo> teacherApplications(Long teacherId, Integer status);
+
     void review(Long adminId, Long applyId, CertificateReviewRequest request);
+
+    void teacherReview(Long teacherId, Long applyId, CertificateReviewRequest request);
 }

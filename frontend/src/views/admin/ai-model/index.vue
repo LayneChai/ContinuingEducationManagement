@@ -5,6 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   createAdminAiModelApi,
   deleteAdminAiModelApi,
+  disableAdminAiModelApi,
   enableAdminAiModelApi,
   getAdminAiModelsApi,
   testAdminAiModelApi,
@@ -101,8 +102,22 @@ async function enableModel(model) {
   }
 }
 
+async function disableModel(model) {
+  try {
+    await disableAdminAiModelApi(model.id)
+    ElMessage.success(`已停用模型：${model.displayName}`)
+    await loadModels()
+  } catch (error) {
+    ElMessage.error(error.message || '停用失败')
+  }
+}
+
 async function deleteModel(model) {
   try {
+    if (model.enabled === 1) {
+      ElMessage.warning('请先停用当前模型，再执行删除')
+      return
+    }
     await ElMessageBox.confirm(`确定删除模型配置「${model.displayName}」吗？`, '删除确认', { type: 'warning' })
     await deleteAdminAiModelApi(model.id)
     ElMessage.success('模型配置已删除')
@@ -152,6 +167,13 @@ async function testModel(model) {
         :closable="false"
         show-icon
       />
+      <el-alert
+        title="删除规则：已启用模型不可直接删除，请先停用后再删除。"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-top: 12px"
+      />
 
       <el-table :data="models" v-loading="loading" stripe style="margin-top: 16px">
         <el-table-column prop="displayName" label="显示名称" min-width="160" />
@@ -171,8 +193,24 @@ async function testModel(model) {
           <template #default="scope">
             <el-button text @click="openEditDialog(scope.row)">编辑</el-button>
             <el-button text @click="testModel(scope.row)">测试</el-button>
-            <el-button text type="primary" :disabled="scope.row.enabled === 1" @click="enableModel(scope.row)">启用</el-button>
-            <el-button text type="danger" @click="deleteModel(scope.row)">删除</el-button>
+            <el-button
+              v-if="scope.row.enabled === 1"
+              text
+              type="warning"
+              @click="disableModel(scope.row)"
+            >停用</el-button>
+            <el-button
+              v-else
+              text
+              type="primary"
+              @click="enableModel(scope.row)"
+            >启用</el-button>
+            <el-button
+              text
+              type="danger"
+              :disabled="scope.row.enabled === 1"
+              @click="deleteModel(scope.row)"
+            >删除</el-button>
           </template>
         </el-table-column>
       </el-table>

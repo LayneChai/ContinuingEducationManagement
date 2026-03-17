@@ -11,6 +11,8 @@ export async function streamStudentAiChat(payload) {
   const response = await fetch('/api/student/ai/chat/stream', {
     method: 'POST',
     headers: {
+      Accept: 'text/event-stream',
+      'Cache-Control': 'no-cache',
       'Content-Type': 'application/json',
       satoken: token || '',
     },

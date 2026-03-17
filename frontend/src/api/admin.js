@@ -2,6 +2,7 @@ import http from './http'
 
 export const getAdminUsersApi = (params) => http.get('/admin/users', { params })
 export const createAdminUserApi = (data) => http.post('/admin/users', data)
+export const updateAdminUserApi = (userId, data) => http.put(`/admin/users/${userId}`, data)
 export const getAdminRolesApi = () => http.get('/admin/roles')
 
 export const getAdminCoursesApi = (params) => http.get('/admin/courses', { params })
@@ -12,5 +13,6 @@ export const getAdminAiModelsApi = () => http.get('/admin/ai-models')
 export const createAdminAiModelApi = (data) => http.post('/admin/ai-models', data)
 export const updateAdminAiModelApi = (configId, data) => http.put(`/admin/ai-models/${configId}`, data)
 export const enableAdminAiModelApi = (configId) => http.post(`/admin/ai-models/${configId}/enable`)
+export const disableAdminAiModelApi = (configId) => http.post(`/admin/ai-models/${configId}/disable`)
 export const deleteAdminAiModelApi = (configId) => http.delete(`/admin/ai-models/${configId}`)
 export const testAdminAiModelApi = (configId) => http.post(`/admin/ai-models/${configId}/test`)

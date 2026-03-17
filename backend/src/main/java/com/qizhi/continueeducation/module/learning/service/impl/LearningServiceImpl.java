@@ -15,6 +15,7 @@ import com.qizhi.continueeducation.module.learning.mapper.EduLearningRecordMappe
 import com.qizhi.continueeducation.module.learning.service.LearningService;
 import com.qizhi.continueeducation.module.learning.vo.LearningOverviewVo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,7 +65,25 @@ public class LearningServiceImpl implements LearningService {
         record.setLastStudyTime(LocalDateTime.now());
 
         if (record.getId() == null) {
-            learningRecordMapper.insert(record);
+            try {
+                learningRecordMapper.insert(record);
+            } catch (DuplicateKeyException ex) {
+                record = learningRecordMapper.selectOne(new LambdaQueryWrapper<EduLearningRecord>()
+                        .eq(EduLearningRecord::getLessonId, lessonId)
+                        .eq(EduLearningRecord::getStudentId, studentId)
+                        .last("limit 1"));
+                if (record == null) {
+                    throw ex;
+                }
+                record.setStudySeconds(Math.max(request.getStudySeconds(), 0));
+                record.setProgressPercent(normalizePercent(request.getProgressPercent()));
+                record.setLastPosition(Math.max(request.getLastPosition(), 0));
+                boolean completedAfterRetry = (request.getCompleted() != null && request.getCompleted() == 1)
+                        || record.getProgressPercent().compareTo(BigDecimal.valueOf(100)) >= 0;
+                record.setIsCompleted(completedAfterRetry ? 1 : 0);
+                record.setLastStudyTime(LocalDateTime.now());
+                learningRecordMapper.updateById(record);
+            }
         } else {
             learningRecordMapper.updateById(record);
         }
@@ -108,7 +127,19 @@ public class LearningServiceImpl implements LearningService {
         stat.setQualified(overview.getQualified());
         stat.setLastCalcTime(LocalDateTime.now());
         if (stat.getId() == null) {
-            courseHourStatMapper.insert(stat);
+            try {
+                courseHourStatMapper.insert(stat);
+            } catch (DuplicateKeyException ex) {
+                EduCourseHourStat existedStat = courseHourStatMapper.selectOne(new LambdaQueryWrapper<EduCourseHourStat>()
+                        .eq(EduCourseHourStat::getCourseId, course.getId())
+                        .eq(EduCourseHourStat::getStudentId, studentId)
+                        .last("limit 1"));
+                if (existedStat == null) {
+                    throw ex;
+                }
+                stat.setId(existedStat.getId());
+                courseHourStatMapper.updateById(stat);
+            }
         } else {
             courseHourStatMapper.updateById(stat);
         }
@@ -136,7 +167,13 @@ public class LearningServiceImpl implements LearningService {
         int totalStudySeconds = records.stream().map(EduLearningRecord::getStudySeconds).filter(v -> v != null).mapToInt(Integer::intValue).sum();
         BigDecimal completedHours = BigDecimal.valueOf(totalStudySeconds)
                 .divide(BigDecimal.valueOf(3600), 2, RoundingMode.HALF_UP);
-        BigDecimal requiredHours = course.getRequiredHours() == null ? BigDecimal.ZERO : course.getRequiredHours();
+        int totalLessonSeconds = lessons.stream()
+                .map(EduCourseLesson::getDurationSeconds)
+                .filter(v -> v != null)
+                .mapToInt(Integer::intValue)
+                .sum();
+        BigDecimal requiredHours = BigDecimal.valueOf(totalLessonSeconds)
+                .divide(BigDecimal.valueOf(3600), 2, RoundingMode.HALF_UP);
         BigDecimal completionRate = requiredHours.compareTo(BigDecimal.ZERO) <= 0
                 ? (totalLessons == 0 ? BigDecimal.ZERO : BigDecimal.valueOf(completedLessons * 100.0 / totalLessons).setScale(2, RoundingMode.HALF_UP))
                 : completedHours.multiply(BigDecimal.valueOf(100)).divide(requiredHours, 2, RoundingMode.HALF_UP).min(BigDecimal.valueOf(100));

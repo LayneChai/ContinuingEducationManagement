@@ -31,12 +31,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -333,10 +335,14 @@ public class CourseServiceImpl implements CourseService {
         if (courses.isEmpty()) {
             return Collections.emptyList();
         }
+        Map<Long, BigDecimal> requiredHoursMap = getRequiredHoursMap(courses.stream().map(EduCourse::getId).toList());
         Map<Long, String> teacherMap = sysUserMapper.selectBatchIds(courses.stream().map(EduCourse::getTeacherId).distinct().toList())
                 .stream().collect(Collectors.toMap(SysUser::getId, SysUser::getRealName, (a, b) -> a));
-        Map<Long, String> categoryMap = categoryMapper.selectBatchIds(courses.stream().map(EduCourse::getCategoryId).filter(id -> id != null).distinct().toList())
-                .stream().collect(Collectors.toMap(EduCourseCategory::getId, EduCourseCategory::getName, (a, b) -> a));
+        List<Long> categoryIds = courses.stream().map(EduCourse::getCategoryId).filter(Objects::nonNull).distinct().toList();
+        Map<Long, String> categoryMap = categoryIds.isEmpty()
+                ? Collections.emptyMap()
+                : categoryMapper.selectBatchIds(categoryIds)
+                        .stream().collect(Collectors.toMap(EduCourseCategory::getId, EduCourseCategory::getName, (a, b) -> a));
         return courses.stream().map(course -> CourseListItemVo.builder()
                 .id(course.getId())
                 .courseCode(course.getCourseCode())
@@ -346,7 +352,7 @@ public class CourseServiceImpl implements CourseService {
                 .teacherName(teacherMap.get(course.getTeacherId()))
                 .categoryId(course.getCategoryId())
                 .categoryName(categoryMap.get(course.getCategoryId()))
-                .requiredHours(course.getRequiredHours())
+                .requiredHours(resolveRequiredHours(course.getId(), requiredHoursMap))
                 .totalLessons(course.getTotalLessons())
                 .auditStatus(course.getAuditStatus())
                 .status(course.getStatus())
@@ -384,6 +390,7 @@ public class CourseServiceImpl implements CourseService {
                 .eq(EduCourseLesson::getCourseId, course.getId())
                 .orderByAsc(EduCourseLesson::getSort)
                 .orderByAsc(EduCourseLesson::getId));
+        BigDecimal requiredHours = calculateRequiredHours(lessons);
         Map<Long, List<CourseLessonVo>> lessonMap = lessons.stream().collect(Collectors.groupingBy(EduCourseLesson::getChapterId,
                 Collectors.mapping(item -> toLessonVo(item, lessonProgressMap.get(item.getId())), Collectors.toList())));
 
@@ -411,7 +418,7 @@ public class CourseServiceImpl implements CourseService {
                 .categoryName(category == null ? null : category.getName())
                 .description(course.getDescription())
                 .targetUser(course.getTargetUser())
-                .requiredHours(course.getRequiredHours())
+                .requiredHours(requiredHours)
                 .totalLessons(course.getTotalLessons())
                 .examRequired(course.getExamRequired())
                 .assignmentRequired(course.getAssignmentRequired())
@@ -459,7 +466,7 @@ public class CourseServiceImpl implements CourseService {
         course.setCategoryId(request.getCategoryId());
         course.setDescription(request.getDescription());
         course.setTargetUser(request.getTargetUser());
-        course.setRequiredHours(request.getRequiredHours());
+        course.setRequiredHours(BigDecimal.ZERO);
         course.setExamRequired(defaultBinary(request.getExamRequired()));
         course.setAssignmentRequired(defaultBinary(request.getAssignmentRequired()));
         course.setCertificateEnabled(request.getCertificateEnabled() == null ? 1 : request.getCertificateEnabled());
@@ -480,7 +487,7 @@ public class CourseServiceImpl implements CourseService {
 
     private void validateCategory(Long categoryId) {
         if (categoryId == null) {
-            return;
+            throw new IllegalArgumentException("课程分类不能为空");
         }
         EduCourseCategory category = categoryMapper.selectById(categoryId);
         if (category == null || !Integer.valueOf(1).equals(category.getStatus())) {
@@ -521,12 +528,40 @@ public class CourseServiceImpl implements CourseService {
     }
 
     private void refreshTotalLessons(Long courseId) {
-        long lessonCount = lessonMapper.selectCount(Wrappers.<EduCourseLesson>lambdaQuery().eq(EduCourseLesson::getCourseId, courseId));
+        List<EduCourseLesson> lessons = lessonMapper.selectList(Wrappers.<EduCourseLesson>lambdaQuery().eq(EduCourseLesson::getCourseId, courseId));
         EduCourse course = courseMapper.selectById(courseId);
         if (course != null) {
-            course.setTotalLessons((int) lessonCount);
+            course.setTotalLessons(lessons.size());
+            course.setRequiredHours(calculateRequiredHours(lessons));
             courseMapper.updateById(course);
         }
+    }
+
+    private Map<Long, BigDecimal> getRequiredHoursMap(List<Long> courseIds) {
+        if (courseIds == null || courseIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return lessonMapper.selectList(new LambdaQueryWrapper<EduCourseLesson>()
+                        .in(EduCourseLesson::getCourseId, courseIds)
+                        .eq(EduCourseLesson::getStatus, 1))
+                .stream()
+                .collect(Collectors.groupingBy(EduCourseLesson::getCourseId,
+                        Collectors.collectingAndThen(Collectors.toList(), this::calculateRequiredHours)));
+    }
+
+    private BigDecimal resolveRequiredHours(Long courseId, Map<Long, BigDecimal> requiredHoursMap) {
+        return requiredHoursMap.getOrDefault(courseId, BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+    }
+
+    private BigDecimal calculateRequiredHours(List<EduCourseLesson> lessons) {
+        int totalSeconds = lessons == null ? 0 : lessons.stream()
+                .filter(item -> item.getStatus() == null || item.getStatus() == 1)
+                .map(EduCourseLesson::getDurationSeconds)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+        return BigDecimal.valueOf(totalSeconds)
+                .divide(BigDecimal.valueOf(3600), 2, RoundingMode.HALF_UP);
     }
 
     private int defaultInt(Integer value) {

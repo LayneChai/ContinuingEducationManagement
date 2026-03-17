@@ -223,11 +223,12 @@ small {
 }
 
 .hero-band {
-  padding: 24px 28px;
+  padding: 28px 30px;
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
   gap: 18px;
   align-items: center;
+  background: linear-gradient(135deg, rgba(255,255,255,.78), rgba(248,243,236,.94));
 }
 
 .hero-copy {
@@ -264,7 +265,7 @@ small {
 .spotlight-item {
   padding: 18px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.74);
+  background: linear-gradient(180deg, rgba(255,255,255,.74), rgba(255,247,238,.9));
   border: 1px solid var(--line-soft);
 
   strong,
@@ -297,6 +298,7 @@ small {
 
 .insight-panel {
   min-height: 100%;
+  background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(248,243,236,.82));
 }
 
 @media (max-width: 1080px) {

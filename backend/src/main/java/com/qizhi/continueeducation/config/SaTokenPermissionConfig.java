@@ -34,6 +34,7 @@ public class SaTokenPermissionConfig implements StpInterface {
             permissions.add("course:manage");
             permissions.add("exam:manage");
             permissions.add("assignment:manage");
+            permissions.add("certificate:audit");
             permissions.add("ai:review");
         }
         if (roles.contains(RoleCode.STUDENT)) {

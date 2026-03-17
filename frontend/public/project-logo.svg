@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">Qizhi Continuing Education Management Logo</title>
+  <desc id="logoDesc">A modern education platform logo combining an open book, upward path, and smart spark.</desc>
+  <defs>
+    <linearGradient id="bgGradient" x1="96" y1="72" x2="420" y2="440" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4F8FF"/>
+      <stop offset="1" stop-color="#D7E6FF"/>
+    </linearGradient>
+    <linearGradient id="coreGradient" x1="142" y1="132" x2="374" y2="380" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F6CBD"/>
+      <stop offset="1" stop-color="#18A999"/>
+    </linearGradient>
+    <linearGradient id="pathGradient" x1="255" y1="188" x2="255" y2="340" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF5D6"/>
+      <stop offset="1" stop-color="#FFD166"/>
+    </linearGradient>
+    <filter id="shadow" x="70" y="62" width="372" height="388" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
+      <feOffset dy="18"/>
+      <feGaussianBlur stdDeviation="18"/>
+      <feColorMatrix values="0 0 0 0 0.0588 0 0 0 0 0.1725 0 0 0 0 0.3569 0 0 0 0.18 0"/>
+      <feBlend in2="BackgroundImageFix" result="effect1_dropShadow_1_1"/>
+      <feBlend in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="128" fill="url(#bgGradient)"/>
+  <circle cx="256" cy="256" r="196" fill="#FFFFFF" fill-opacity="0.72"/>
+
+  <g filter="url(#shadow)">
+    <path d="M132 162C132 146.536 144.536 134 160 134H352C367.464 134 380 146.536 380 162V310C380 325.464 367.464 338 352 338H281.5C270.73 338 260.401 342.279 252.787 349.893L232.787 369.893C225.227 377.453 212.314 372.1 212.314 361.409V350.5C212.314 343.596 206.718 338 199.814 338H160C144.536 338 132 325.464 132 310V162Z" fill="url(#coreGradient)"/>
+    <path d="M164 188C164 180.268 170.268 174 178 174H334C341.732 174 348 180.268 348 188V283C348 290.732 341.732 297 334 297H279.742C272.314 297 265.191 299.95 259.939 305.202L243.899 321.242C239.489 325.652 232 322.528 232 316.293V309C232 302.373 226.627 297 220 297H178C170.268 297 164 290.732 164 283V188Z" fill="#F9FCFF" fill-opacity="0.96"/>
+
+    <path d="M178 203.5C178 196.044 184.044 190 191.5 190H239V300H191.5C184.044 300 178 293.956 178 286.5V203.5Z" fill="#E8F1FF"/>
+    <path d="M334 203.5C334 196.044 327.956 190 320.5 190H273V300H320.5C327.956 300 334 293.956 334 286.5V203.5Z" fill="#EAFBF7"/>
+    <path d="M256 190V300" stroke="#C6D7F2" stroke-width="8" stroke-linecap="round"/>
+
+    <path d="M223 281C223 263.327 237.327 249 255 249C272.673 249 287 263.327 287 281V305H223V281Z" fill="url(#pathGradient)"/>
+    <path d="M255 183L292 226H270V265H240V226H218L255 183Z" fill="url(#pathGradient)"/>
+
+    <path d="M205 220H225" stroke="#8FAEDC" stroke-width="8" stroke-linecap="round"/>
+    <path d="M205 243H225" stroke="#8FAEDC" stroke-width="8" stroke-linecap="round"/>
+    <path d="M287 220H307" stroke="#8ACABB" stroke-width="8" stroke-linecap="round"/>
+    <path d="M287 243H307" stroke="#8ACABB" stroke-width="8" stroke-linecap="round"/>
+
+    <path d="M323 123L330.604 140.396L348 148L330.604 155.604L323 173L315.396 155.604L298 148L315.396 140.396L323 123Z" fill="#FFD166"/>
+    <circle cx="360" cy="171" r="10" fill="#0F6CBD" fill-opacity="0.16"/>
+    <circle cx="150" cy="352" r="14" fill="#18A999" fill-opacity="0.16"/>
+  </g>
+</svg>

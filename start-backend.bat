@@ -2,15 +2,21 @@
 setlocal
 
 set "ROOT_DIR=%~dp0"
-set "JDK_DIR=%ROOT_DIR%.tools\jdk-17.0.18+8"
 
-if not exist "%JDK_DIR%\bin\java.exe" (
-  echo [ERROR] JDK 17 not found: "%JDK_DIR%"
+if defined JAVA_HOME (
+  if exist "%JAVA_HOME%\bin\java.exe" (
+    set "PATH=%JAVA_HOME%\bin;%PATH%"
+    goto java_ready
+  )
+)
+
+where java >nul 2>nul
+if errorlevel 1 (
+  echo [ERROR] Java not found. Please configure JAVA_HOME or add java to PATH.
   exit /b 1
 )
 
-set "JAVA_HOME=%JDK_DIR%"
-set "PATH=%JAVA_HOME%\bin;%PATH%"
+:java_ready
 
 if "%DEEPSEEK_API_KEY%"=="" (
   echo [WARN] DEEPSEEK_API_KEY is empty, AI chat will return config prompt.

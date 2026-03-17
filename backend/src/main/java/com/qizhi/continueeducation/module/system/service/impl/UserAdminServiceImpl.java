@@ -2,6 +2,7 @@ package com.qizhi.continueeducation.module.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qizhi.continueeducation.module.system.dto.CreateUserRequest;
+import com.qizhi.continueeducation.module.system.dto.UpdateUserRequest;
 import com.qizhi.continueeducation.module.system.entity.SysRole;
 import com.qizhi.continueeducation.module.system.entity.SysUser;
 import com.qizhi.continueeducation.module.system.mapper.SysUserMapper;
@@ -63,7 +64,9 @@ public class UserAdminServiceImpl implements UserAdminService {
                         .email(user.getEmail())
                         .status(user.getStatus())
                         .studentNo(user.getStudentNo())
+                        .className(user.getClassName())
                         .title(user.getTitle())
+                        .bio(user.getBio())
                         .roles(roleMap.getOrDefault(user.getId(), Collections.emptyList()))
                         .createTime(user.getCreateTime())
                         .build())
@@ -84,27 +87,69 @@ public class UserAdminServiceImpl implements UserAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createUser(CreateUserRequest request) {
+        String username = request.getUsername().trim();
+
         long count = sysUserMapper.selectCount(new LambdaQueryWrapper<SysUser>()
-                .eq(SysUser::getUsername, request.getUsername())
+                .eq(SysUser::getUsername, username)
                 .eq(SysUser::getDeleted, 0));
         if (count > 0) {
             throw new IllegalArgumentException("用户名已存在");
         }
 
         SysUser user = new SysUser();
-        user.setUsername(request.getUsername());
+        user.setUsername(username);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRealName(request.getRealName());
-        user.setPhone(request.getPhone());
-        user.setEmail(request.getEmail());
-        user.setStudentNo(request.getStudentNo());
-        user.setTitle(request.getTitle());
-        user.setBio(request.getBio());
+        user.setRealName(request.getRealName().trim());
+        user.setPhone(normalizeNullable(request.getPhone()));
+        user.setEmail(normalizeNullable(request.getEmail()));
+        user.setStudentNo(normalizeNullable(request.getStudentNo()));
+        user.setClassName(normalizeNullable(request.getClassName()));
+        user.setTitle(normalizeNullable(request.getTitle()));
+        user.setBio(normalizeNullable(request.getBio()));
         user.setStatus(1);
         user.setDeleted(0);
         sysUserMapper.insert(user);
 
         userRoleService.bindRoles(user.getId(), request.getRoleCodes());
         return user.getId();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateUser(Long userId, UpdateUserRequest request) {
+        SysUser user = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getId, userId)
+                .eq(SysUser::getDeleted, 0)
+                .last("limit 1"));
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+
+        user.setRealName(request.getRealName().trim());
+        user.setPhone(normalizeNullable(request.getPhone()));
+        user.setEmail(normalizeNullable(request.getEmail()));
+        user.setStudentNo(normalizeNullable(request.getStudentNo()));
+        user.setClassName(normalizeNullable(request.getClassName()));
+        user.setTitle(normalizeNullable(request.getTitle()));
+        user.setBio(normalizeNullable(request.getBio()));
+        user.setStatus(normalizeStatus(request.getStatus()));
+        if (StringUtils.hasText(request.getPassword())) {
+            user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
+        }
+        sysUserMapper.updateById(user);
+    }
+
+    private Integer normalizeStatus(Integer status) {
+        if (status == null || (status != 0 && status != 1)) {
+            throw new IllegalArgumentException("用户状态不合法");
+        }
+        return status;
+    }
+
+    private String normalizeNullable(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return value.trim();
     }
 }

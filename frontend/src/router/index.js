@@ -92,7 +92,7 @@ async function ensureDynamicRoutes() {
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
 
-  if (to.meta.public) {
+  if (to.meta.public && to.name !== 'NotFound') {
     if (to.path === '/login' && authStore.token) {
       await ensureDynamicRoutes()
       return usePortalStore().defaultRoute || '/portal/loading'
@@ -109,6 +109,10 @@ router.beforeEach(async (to) => {
   }
 
   await ensureDynamicRoutes()
+
+  if (to.name === 'NotFound') {
+    return { path: to.fullPath, replace: true }
+  }
 
   if (to.path === '/' || to.path === '/portal/loading') {
     return usePortalStore().defaultRoute || '/portal/loading'

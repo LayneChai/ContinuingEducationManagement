@@ -13,10 +13,10 @@ public class CourseSaveRequest {
     private String title;
     private String subtitle;
     private String coverUrl;
+    @NotNull(message = "课程分类不能为空")
     private Long categoryId;
     private String description;
     private String targetUser;
-    @NotNull(message = "要求学时不能为空")
     private BigDecimal requiredHours;
     private Integer examRequired;
     private Integer assignmentRequired;

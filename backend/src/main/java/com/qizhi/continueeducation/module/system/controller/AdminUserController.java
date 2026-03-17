@@ -3,6 +3,7 @@ package com.qizhi.continueeducation.module.system.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.qizhi.continueeducation.common.domain.ApiResponse;
 import com.qizhi.continueeducation.module.system.dto.CreateUserRequest;
+import com.qizhi.continueeducation.module.system.dto.UpdateUserRequest;
 import com.qizhi.continueeducation.module.system.enums.RoleCode;
 import com.qizhi.continueeducation.module.system.service.UserAdminService;
 import com.qizhi.continueeducation.module.system.vo.RoleOptionVo;
@@ -10,7 +11,9 @@ import com.qizhi.continueeducation.module.system.vo.UserListItemVo;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -39,6 +42,13 @@ public class AdminUserController {
         StpUtil.checkRole(RoleCode.ADMIN);
         Long userId = userAdminService.createUser(request);
         return ApiResponse.success(Map.of("userId", userId));
+    }
+
+    @PutMapping("/users/{userId}")
+    public ApiResponse<Void> updateUser(@PathVariable Long userId, @Valid @RequestBody UpdateUserRequest request) {
+        StpUtil.checkRole(RoleCode.ADMIN);
+        userAdminService.updateUser(userId, request);
+        return ApiResponse.success(null);
     }
 
     @GetMapping("/roles")

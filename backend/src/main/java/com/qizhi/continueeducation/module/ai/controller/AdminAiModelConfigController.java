@@ -54,6 +54,13 @@ public class AdminAiModelConfigController {
         return ApiResponse.success("模型已启用", null);
     }
 
+    @PostMapping("/{configId}/disable")
+    public ApiResponse<Void> disable(@PathVariable Long configId) {
+        StpUtil.checkRole(RoleCode.ADMIN);
+        aiModelConfigService.disableConfig(configId);
+        return ApiResponse.success("模型已停用", null);
+    }
+
     @DeleteMapping("/{configId}")
     public ApiResponse<Void> delete(@PathVariable Long configId) {
         StpUtil.checkRole(RoleCode.ADMIN);

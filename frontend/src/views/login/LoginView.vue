@@ -35,11 +35,23 @@ async function submit() {
 <template>
   <div class="login-screen">
     <section class="hero-panel">
-      <span class="hero-tag">AI-enabled continuing education</span>
-      <h1>启智继续教育管理系统</h1>
-      <p>
-        从课程审核、学习进度、考试作业到证书颁发，再到 AI 智能辅导，统一收拢在一个清晰、沉稳、可扩展的运营中枢里。
-      </p>
+      <div class="hero-copy">
+        <span class="hero-tag">AI-enabled continuing education</span>
+        <h1>启智继续教育管理系统</h1>
+        <p>
+          以课程为核心，把教学、学习、考核、证书与智能辅导组织成一套统一的继续教育体验，让管理更有秩序，让学习更有节奏。
+        </p>
+      </div>
+      <div class="hero-badge-row">
+        <div class="hero-badge">
+          <strong>3 端</strong>
+          <span>管理员 / 教师 / 学员协同</span>
+        </div>
+        <div class="hero-badge">
+          <strong>AI</strong>
+          <span>课程辅导与学习问答贯通</span>
+        </div>
+      </div>
       <div class="hero-grid">
         <article class="hero-card app-card">
           <strong>管理员</strong>
@@ -99,6 +111,11 @@ async function submit() {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  background: linear-gradient(155deg, rgba(255, 250, 242, 0.82), rgba(248, 243, 236, 0.76));
+}
+
+.hero-copy {
+  max-width: 780px;
 }
 
 .hero-tag {
@@ -116,10 +133,10 @@ async function submit() {
 
 .hero-panel h1 {
   margin: 24px 0 12px;
-  max-width: 10ch;
+  max-width: 11ch;
   font-family: var(--font-display);
-  font-size: 68px;
-  line-height: 1.02;
+  font-size: 72px;
+  line-height: 0.98;
 }
 
 .hero-panel p {
@@ -129,6 +146,36 @@ async function submit() {
   font-size: 16px;
 }
 
+.hero-badge-row {
+  display: flex;
+  gap: 14px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.hero-badge {
+  min-width: 180px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(92, 71, 44, 0.08);
+}
+
+.hero-badge strong,
+.hero-badge span {
+  display: block;
+}
+
+.hero-badge strong {
+  font-family: var(--font-display);
+  font-size: 28px;
+}
+
+.hero-badge span {
+  margin-top: 4px;
+  color: var(--text-secondary);
+}
+
 .hero-grid {
   display: grid;
   gap: 14px;
@@ -136,7 +183,7 @@ async function submit() {
 }
 
 .hero-card {
-  padding: 18px;
+  padding: 20px;
 }
 
 .hero-card strong,
@@ -156,6 +203,7 @@ async function submit() {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  background: linear-gradient(180deg, rgba(255,255,255,.88), rgba(251,246,239,.88));
 }
 
 .login-head span {
@@ -168,7 +216,7 @@ async function submit() {
 .login-head h2 {
   margin: 10px 0 24px;
   font-family: var(--font-display);
-  font-size: 40px;
+  font-size: 42px;
 }
 
 .submit-btn {
@@ -182,6 +230,9 @@ async function submit() {
   margin-top: 18px;
   color: var(--text-secondary);
   font-size: 13px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(166, 102, 46, 0.08);
 }
 
 @media (max-width: 960px) {

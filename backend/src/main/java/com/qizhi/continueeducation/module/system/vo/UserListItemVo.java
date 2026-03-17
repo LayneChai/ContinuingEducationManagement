@@ -17,7 +17,9 @@ public class UserListItemVo {
     private String email;
     private Integer status;
     private String studentNo;
+    private String className;
     private String title;
+    private String bio;
     private List<String> roles;
     private LocalDateTime createTime;
 }

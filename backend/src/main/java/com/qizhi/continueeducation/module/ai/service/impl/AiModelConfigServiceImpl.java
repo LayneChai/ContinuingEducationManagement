@@ -78,8 +78,24 @@ public class AiModelConfigServiceImpl implements AiModelConfigService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public void disableConfig(Long configId) {
+        AiModelConfig config = requireConfig(configId);
+        if (config.getEnabled() == null || config.getEnabled() != 1) {
+            return;
+        }
+        AiModelConfig update = new AiModelConfig();
+        update.setId(configId);
+        update.setEnabled(0);
+        aiModelConfigMapper.updateById(update);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteConfig(Long configId) {
         AiModelConfig config = requireConfig(configId);
+        if (config.getEnabled() != null && config.getEnabled() == 1) {
+            throw new IllegalStateException("请先停用当前模型，再执行删除");
+        }
         aiModelConfigMapper.deleteById(config.getId());
     }
 

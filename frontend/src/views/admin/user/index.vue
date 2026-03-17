@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 
-import { createAdminUserApi, getAdminRolesApi, getAdminUsersApi } from '../../../api/admin'
+import { createAdminUserApi, getAdminRolesApi, getAdminUsersApi, updateAdminUserApi } from '../../../api/admin'
 
 const filters = reactive({
   keyword: '',
@@ -17,6 +17,13 @@ const createDialog = reactive({
   visible: false,
   saving: false,
   form: defaultUserForm(),
+})
+
+const editDialog = reactive({
+  visible: false,
+  saving: false,
+  userId: null,
+  form: defaultEditForm(),
 })
 
 const metrics = computed(() => [
@@ -38,9 +45,25 @@ function defaultUserForm() {
     phone: '',
     email: '',
     studentNo: '',
+    className: '',
     title: '',
     bio: '',
+    status: 1,
     roleCodes: ['STUDENT'],
+  }
+}
+
+function defaultEditForm() {
+  return {
+    username: '',
+    realName: '',
+    phone: '',
+    email: '',
+    studentNo: '',
+    className: '',
+    bio: '',
+    password: '',
+    status: 1,
   }
 }
 
@@ -62,6 +85,22 @@ function openCreateDialog() {
   createDialog.form = defaultUserForm()
 }
 
+function openEditDialog(user) {
+  editDialog.visible = true
+  editDialog.userId = user.id
+  editDialog.form = {
+    username: user.username,
+    realName: user.realName,
+    phone: user.phone || '',
+    email: user.email || '',
+    studentNo: user.studentNo || '',
+    className: user.className || '',
+    bio: user.bio || '',
+    password: '',
+    status: user.status,
+  }
+}
+
 async function submitCreate() {
   createDialog.saving = true
   try {
@@ -73,6 +112,20 @@ async function submitCreate() {
     ElMessage.error(error.message || '创建失败')
   } finally {
     createDialog.saving = false
+  }
+}
+
+async function submitEdit() {
+  editDialog.saving = true
+  try {
+    await updateAdminUserApi(editDialog.userId, editDialog.form)
+    ElMessage.success('学员信息已更新')
+    editDialog.visible = false
+    await loadUsers()
+  } catch (error) {
+    ElMessage.error(error.message || '更新失败')
+  } finally {
+    editDialog.saving = false
   }
 }
 
@@ -114,12 +167,18 @@ function statusText(status) {
         <el-table-column prop="studentNo" label="学员编号" min-width="120" />
         <el-table-column prop="phone" label="手机号" min-width="140" />
         <el-table-column prop="email" label="邮箱" min-width="180" />
+        <el-table-column prop="className" label="班级" min-width="140" />
         <el-table-column label="状态" width="100">
           <template #default="scope">
             <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">{{ statusText(scope.row.status) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" min-width="180" />
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="scope">
+            <el-button link type="primary" @click="openEditDialog(scope.row)">编辑</el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </section>
 
@@ -134,14 +193,44 @@ function statusText(status) {
           <el-form-item label="学员编号"><el-input v-model="createDialog.form.studentNo" /></el-form-item>
         </div>
         <div class="dialog-grid two-col">
+          <el-form-item label="班级"><el-input v-model="createDialog.form.className" /></el-form-item>
           <el-form-item label="手机号"><el-input v-model="createDialog.form.phone" /></el-form-item>
+        </div>
+        <div class="dialog-grid two-col">
           <el-form-item label="邮箱"><el-input v-model="createDialog.form.email" /></el-form-item>
+          <el-form-item label="状态"><el-switch v-model="createDialog.form.status" :active-value="1" :inactive-value="0" disabled /></el-form-item>
         </div>
         <el-form-item label="备注 / 简介"><el-input v-model="createDialog.form.bio" type="textarea" :rows="3" /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="createDialog.visible = false">取消</el-button>
         <el-button type="primary" :loading="createDialog.saving" @click="submitCreate">创建</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="editDialog.visible" title="编辑学员" width="720px">
+      <el-form label-position="top">
+        <div class="dialog-grid two-col">
+          <el-form-item label="姓名"><el-input v-model="editDialog.form.realName" /></el-form-item>
+          <el-form-item label="登录账号"><el-input v-model="editDialog.form.username" disabled /></el-form-item>
+        </div>
+        <div class="dialog-grid two-col">
+          <el-form-item label="新密码"><el-input v-model="editDialog.form.password" placeholder="不修改请留空" show-password /></el-form-item>
+          <el-form-item label="学员编号"><el-input v-model="editDialog.form.studentNo" /></el-form-item>
+        </div>
+        <div class="dialog-grid two-col">
+          <el-form-item label="班级"><el-input v-model="editDialog.form.className" /></el-form-item>
+          <el-form-item label="账号状态"><el-switch v-model="editDialog.form.status" :active-value="1" :inactive-value="0" inline-prompt active-text="启用" inactive-text="停用" /></el-form-item>
+        </div>
+        <div class="dialog-grid two-col">
+          <el-form-item label="手机号"><el-input v-model="editDialog.form.phone" /></el-form-item>
+          <el-form-item label="邮箱"><el-input v-model="editDialog.form.email" /></el-form-item>
+        </div>
+        <el-form-item label="备注 / 简介"><el-input v-model="editDialog.form.bio" type="textarea" :rows="3" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="editDialog.saving" @click="submitEdit">保存</el-button>
       </template>
     </el-dialog>
   </div>

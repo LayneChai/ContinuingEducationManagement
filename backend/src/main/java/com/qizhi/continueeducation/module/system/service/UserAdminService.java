@@ -1,6 +1,7 @@
 package com.qizhi.continueeducation.module.system.service;
 
 import com.qizhi.continueeducation.module.system.dto.CreateUserRequest;
+import com.qizhi.continueeducation.module.system.dto.UpdateUserRequest;
 import com.qizhi.continueeducation.module.system.vo.RoleOptionVo;
 import com.qizhi.continueeducation.module.system.vo.UserListItemVo;
 
@@ -13,4 +14,6 @@ public interface UserAdminService {
     List<RoleOptionVo> listRoles();
 
     Long createUser(CreateUserRequest request);
+
+    void updateUser(Long userId, UpdateUserRequest request);
 }

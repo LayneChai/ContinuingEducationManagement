@@ -28,9 +28,22 @@ function onMenuSelect(path) {
   <div class="shell">
     <aside class="sidebar app-card">
       <div class="brand-block">
-        <span class="brand-tag">QiZhi AI</span>
+        <div class="brand-mark">
+          <span class="brand-tag">QiZhi AI</span>
+          <div class="brand-orbit"></div>
+        </div>
         <h1>启智继续教育</h1>
-        <p>三端协同的继续教育与智能辅导平台</p>
+        <p>围绕课程学习、教学运营与智能辅导，构建统一、克制而清晰的继续教育工作界面。</p>
+        <div class="brand-meta">
+          <div>
+            <strong>{{ authStore.roles[0] || 'USER' }}</strong>
+            <span>当前身份</span>
+          </div>
+          <div>
+            <strong>{{ menuGroups.length }}</strong>
+            <span>导航分组</span>
+          </div>
+        </div>
       </div>
 
       <div class="menu-groups">
@@ -59,16 +72,17 @@ function onMenuSelect(path) {
 
     <main class="main-panel">
       <header class="topbar app-card">
-        <div>
+        <div class="topbar-copy">
           <div class="eyebrow">Continuing Education Platform</div>
           <div class="topbar-title">{{ dashboardTitle }}</div>
+          <p class="topbar-subtitle">让课程、学员、考试、证书与 AI 辅导保持在一条自然连贯的工作流里。</p>
         </div>
         <div class="user-tools">
           <div class="user-chip">
             <strong>{{ authStore.userName }}</strong>
             <span>{{ authStore.roles.join(' / ') }}</span>
           </div>
-          <el-button type="primary" plain @click="handleLogout">退出登录</el-button>
+          <el-button type="primary" @click="handleLogout">退出登录</el-button>
         </div>
       </header>
 
@@ -83,25 +97,29 @@ function onMenuSelect(path) {
 .shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 18px;
-  padding: 18px;
+  grid-template-columns: 306px minmax(0, 1fr);
+  gap: 20px;
+  padding: 20px;
 }
 
 .sidebar {
-  padding: 22px 18px;
+  padding: 24px 18px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 22px;
+  background: linear-gradient(180deg, rgba(255, 250, 244, 0.92), rgba(250, 246, 239, 0.82));
 }
 
 .brand-block {
-  padding: 12px;
+  padding: 14px;
+  border-radius: 24px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.5), rgba(255, 247, 237, 0.72));
+  border: 1px solid rgba(92, 71, 44, 0.08);
 
   h1 {
     margin: 12px 0 8px;
     font-family: var(--font-display);
-    font-size: 28px;
+    font-size: 30px;
   }
 
   p {
@@ -109,6 +127,29 @@ function onMenuSelect(path) {
     color: var(--text-secondary);
     line-height: 1.7;
   }
+}
+
+.brand-mark {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand-orbit {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.8), rgba(166,102,46,.2)), linear-gradient(145deg, rgba(96,149,110,.18), rgba(166,102,46,.12));
+  border: 1px solid rgba(92, 71, 44, 0.08);
+  position: relative;
+}
+
+.brand-orbit::after {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border-radius: 999px;
+  border: 2px solid rgba(125, 77, 32, 0.42);
 }
 
 .brand-tag {
@@ -120,6 +161,36 @@ function onMenuSelect(path) {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.brand-meta {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.brand-meta > div {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(92, 71, 44, 0.08);
+}
+
+.brand-meta strong,
+.brand-meta span {
+  display: block;
+}
+
+.brand-meta strong {
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+.brand-meta span {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
 }
 
 .menu-groups {
@@ -136,9 +207,11 @@ function onMenuSelect(path) {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 10px;
+  padding: 0 12px;
   color: var(--text-secondary);
   font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 :deep(.side-menu) {
@@ -147,14 +220,16 @@ function onMenuSelect(path) {
 }
 
 :deep(.side-menu .el-menu-item) {
-  border-radius: 14px;
-  margin-bottom: 6px;
+  min-height: 46px;
+  border-radius: 16px;
+  margin-bottom: 8px;
   color: var(--text-primary);
 }
 
 :deep(.side-menu .el-menu-item.is-active) {
-  background: linear-gradient(135deg, rgba(161, 100, 47, 0.16), rgba(111, 149, 96, 0.12));
+  background: linear-gradient(135deg, rgba(166, 102, 46, 0.18), rgba(96, 149, 110, 0.14));
   color: var(--brand-deep);
+  box-shadow: inset 0 0 0 1px rgba(166, 102, 46, 0.08);
 }
 
 .main-panel {
@@ -164,11 +239,16 @@ function onMenuSelect(path) {
 }
 
 .topbar {
-  padding: 18px 24px;
+  padding: 22px 26px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  background: linear-gradient(135deg, rgba(255,255,255,.78), rgba(249,244,237,.92));
+}
+
+.topbar-copy {
+  min-width: 0;
 }
 
 .eyebrow {
@@ -180,8 +260,13 @@ function onMenuSelect(path) {
 
 .topbar-title {
   margin-top: 6px;
-  font-size: 28px;
+  font-size: 30px;
   font-family: var(--font-display);
+}
+
+.topbar-subtitle {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
 }
 
 .user-tools {
@@ -191,9 +276,9 @@ function onMenuSelect(path) {
 }
 
 .user-chip {
-  padding: 10px 14px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.65);
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.75);
   border: 1px solid var(--line-soft);
 }
 
@@ -209,7 +294,8 @@ function onMenuSelect(path) {
 }
 
 .content {
-  padding: 24px;
+  padding: 28px;
+  background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,250,245,.72));
 }
 
 @media (max-width: 1024px) {

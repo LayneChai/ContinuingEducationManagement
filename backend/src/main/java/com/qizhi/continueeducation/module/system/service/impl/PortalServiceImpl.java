@@ -221,6 +221,7 @@ public class PortalServiceImpl implements PortalService {
                         menu("TeacherCourses", "/teacher/courses", "teacher/course/index", "课程管理", "Notebook", "course:manage"),
                         menu("TeacherExams", "/teacher/exams", "teacher/exam/index", "考试管理", "EditPen", "exam:manage"),
                         menu("TeacherAssignments", "/teacher/assignments", "teacher/assignment/index", "作业管理", "DocumentChecked", "assignment:manage"),
+                        menu("TeacherCertificates", "/teacher/certificates", "teacher/certificate/index", "证书审核", "Postcard", "certificate:audit"),
                         menu("TeacherAiLogs", "/teacher/ai-logs", "teacher/ai/index", "AI记录", "ChatDotRound", "ai:review")
                 ))
                 .build();

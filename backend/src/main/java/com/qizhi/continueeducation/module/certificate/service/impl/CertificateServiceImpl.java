@@ -16,8 +16,8 @@ import com.qizhi.continueeducation.module.course.entity.EduCourse;
 import com.qizhi.continueeducation.module.course.entity.EduCourseEnrollment;
 import com.qizhi.continueeducation.module.course.mapper.EduCourseEnrollmentMapper;
 import com.qizhi.continueeducation.module.course.mapper.EduCourseMapper;
-import com.qizhi.continueeducation.module.learning.entity.EduCourseHourStat;
-import com.qizhi.continueeducation.module.learning.mapper.EduCourseHourStatMapper;
+import com.qizhi.continueeducation.module.learning.service.LearningService;
+import com.qizhi.continueeducation.module.learning.vo.LearningOverviewVo;
 import com.qizhi.continueeducation.module.system.entity.SysUser;
 import com.qizhi.continueeducation.module.system.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +41,7 @@ public class CertificateServiceImpl implements CertificateService {
     private final EduCertificateTemplateMapper templateMapper;
     private final EduCourseMapper courseMapper;
     private final EduCourseEnrollmentMapper enrollmentMapper;
-    private final EduCourseHourStatMapper hourStatMapper;
+    private final LearningService learningService;
     private final SysUserMapper userMapper;
 
     @Override
@@ -58,11 +58,8 @@ public class CertificateServiceImpl implements CertificateService {
         if (enrollment == null || !Integer.valueOf(2).equals(enrollment.getStatus())) {
             throw new IllegalStateException("课程尚未完成，暂不能申请证书");
         }
-        EduCourseHourStat stat = hourStatMapper.selectOne(new LambdaQueryWrapper<EduCourseHourStat>()
-                .eq(EduCourseHourStat::getCourseId, courseId)
-                .eq(EduCourseHourStat::getStudentId, studentId)
-                .last("limit 1"));
-        if (stat == null || !Integer.valueOf(1).equals(stat.getQualified())) {
+        LearningOverviewVo overview = learningService.getCourseLearningOverview(studentId, courseId);
+        if (overview == null || !Integer.valueOf(1).equals(overview.getQualified())) {
             throw new IllegalStateException("学时未达标，暂不能申请证书");
         }
 
@@ -112,25 +109,58 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
     @Override
+    public List<CertificateApplyVo> teacherApplications(Long teacherId, Integer status) {
+        List<Long> courseIds = courseMapper.selectList(new LambdaQueryWrapper<EduCourse>()
+                        .eq(EduCourse::getTeacherId, teacherId))
+                .stream()
+                .map(EduCourse::getId)
+                .toList();
+        if (courseIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<EduCertificateApply> applies = applyMapper.selectList(new LambdaQueryWrapper<EduCertificateApply>()
+                .in(EduCertificateApply::getCourseId, courseIds)
+                .eq(status != null, EduCertificateApply::getStatus, status)
+                .orderByAsc(EduCertificateApply::getStatus)
+                .orderByDesc(EduCertificateApply::getApplyTime));
+        return toApplyVos(applies);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void review(Long adminId, Long applyId, CertificateReviewRequest request) {
         EduCertificateApply apply = requireApply(applyId);
+        doReview(adminId, apply, request);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void teacherReview(Long teacherId, Long applyId, CertificateReviewRequest request) {
+        EduCertificateApply apply = requireApply(applyId);
+        EduCourse course = requireCourse(apply.getCourseId());
+        if (!teacherId.equals(course.getTeacherId())) {
+            throw new IllegalArgumentException("只能审核本人课程的证书申请");
+        }
+        doReview(teacherId, apply, request);
+    }
+
+    private void doReview(Long reviewerId, EduCertificateApply apply, CertificateReviewRequest request) {
         if (!Integer.valueOf(0).equals(apply.getStatus()) && !Integer.valueOf(2).equals(request.getStatus())) {
             throw new IllegalStateException("当前申请状态不可审核通过");
         }
         apply.setStatus(request.getStatus());
-        apply.setReviewerId(adminId);
+        apply.setReviewerId(reviewerId);
         apply.setReviewRemark(request.getReviewRemark());
         apply.setReviewTime(LocalDateTime.now());
         applyMapper.updateById(apply);
 
         if (Integer.valueOf(1).equals(request.getStatus())) {
             EduCertificateRecord record = recordMapper.selectOne(new LambdaQueryWrapper<EduCertificateRecord>()
-                    .eq(EduCertificateRecord::getApplyId, applyId)
+                    .eq(EduCertificateRecord::getApplyId, apply.getId())
                     .last("limit 1"));
             if (record == null) {
                 record = new EduCertificateRecord();
-                record.setApplyId(applyId);
+                record.setApplyId(apply.getId());
                 record.setCertificateNo(generateCertificateNo(apply.getCourseId(), apply.getStudentId()));
             }
             EduCourse course = requireCourse(apply.getCourseId());

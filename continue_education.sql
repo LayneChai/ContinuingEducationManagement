@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
   `gender` TINYINT NOT NULL DEFAULT 0 COMMENT '性别 0未知 1男 2女',
   `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态 0禁用 1启用',
   `student_no` VARCHAR(50) DEFAULT NULL COMMENT '学员编号',
+  `class_name` VARCHAR(100) DEFAULT NULL COMMENT '班级名称',
   `title` VARCHAR(100) DEFAULT NULL COMMENT '教师职称/岗位',
   `bio` VARCHAR(500) DEFAULT NULL COMMENT '个人简介',
   `last_login_time` DATETIME DEFAULT NULL COMMENT '最后登录时间',
@@ -535,6 +536,7 @@ CREATE TABLE IF NOT EXISTS `ai_chat_message` (
   `token_count` INT NOT NULL DEFAULT 0 COMMENT 'Token消耗',
   `response_time_ms` INT DEFAULT NULL COMMENT '响应耗时',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   KEY `idx_ai_chat_message_session_id` (`session_id`),
   KEY `idx_ai_chat_message_user_id` (`user_id`),
@@ -579,6 +581,25 @@ ON DUPLICATE KEY UPDATE
   `role_name` = VALUES(`role_name`),
   `status` = VALUES(`status`),
   `sort` = VALUES(`sort`),
+  `remark` = VALUES(`remark`);
+
+INSERT INTO `edu_course_category` (`parent_id`, `name`, `code`, `sort`, `status`, `remark`)
+VALUES
+  (0, '公需课', 'DEFAULT_1', 1, 1, '系统默认课程分类'),
+  (0, '专业技术', 'DEFAULT_2', 2, 1, '系统默认课程分类'),
+  (0, '职业技能', 'DEFAULT_3', 3, 1, '系统默认课程分类'),
+  (0, '岗位培训', 'DEFAULT_4', 4, 1, '系统默认课程分类'),
+  (0, '政策法规', 'DEFAULT_5', 5, 1, '系统默认课程分类'),
+  (0, '信息技术', 'DEFAULT_6', 6, 1, '系统默认课程分类'),
+  (0, '安全生产', 'DEFAULT_7', 7, 1, '系统默认课程分类'),
+  (0, '管理能力', 'DEFAULT_8', 8, 1, '系统默认课程分类'),
+  (0, '学历提升', 'DEFAULT_9', 9, 1, '系统默认课程分类'),
+  (0, '素质教育', 'DEFAULT_10', 10, 1, '系统默认课程分类'),
+  (0, '其他', 'DEFAULT_11', 11, 1, '系统默认课程分类')
+ON DUPLICATE KEY UPDATE
+  `name` = VALUES(`name`),
+  `sort` = VALUES(`sort`),
+  `status` = VALUES(`status`),
   `remark` = VALUES(`remark`);
 
 SET FOREIGN_KEY_CHECKS = 1;

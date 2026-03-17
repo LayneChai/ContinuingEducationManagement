@@ -17,6 +17,8 @@ public interface AiModelConfigService {
 
     void enableConfig(Long configId);
 
+    void disableConfig(Long configId);
+
     void deleteConfig(Long configId);
 
     AiModelTestResultVo testConfig(Long configId);

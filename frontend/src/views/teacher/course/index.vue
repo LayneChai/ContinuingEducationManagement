@@ -23,6 +23,12 @@ const courses = ref([])
 const activeCourseId = ref(null)
 const courseDetail = ref(null)
 const detailLoading = ref(false)
+const courseFormRef = ref()
+
+const courseRules = {
+  title: [{ required: true, message: '请输入课程标题', trigger: 'blur' }],
+  categoryId: [{ required: true, message: '请选择课程分类', trigger: 'change' }],
+}
 
 const filters = reactive({
   keyword: '',
@@ -80,7 +86,7 @@ function defaultCourseForm() {
     categoryId: null,
     description: '',
     targetUser: '',
-    requiredHours: 12,
+    requiredHours: 0,
     examRequired: 0,
     assignmentRequired: 0,
     certificateEnabled: 1,
@@ -94,7 +100,7 @@ function defaultLessonForm() {
     lessonType: 1,
     resourceUrl: '',
     content: '',
-    durationSeconds: 900,
+    durationSeconds: 15,
     previewEnabled: 0,
     sort: 0,
     status: 1,
@@ -135,6 +141,7 @@ function openCreateCourse() {
   courseDialog.visible = true
   courseDialog.isEdit = false
   courseDialog.form = defaultCourseForm()
+  courseFormRef.value?.clearValidate()
 }
 
 function openEditCourse() {
@@ -153,9 +160,15 @@ function openEditCourse() {
     assignmentRequired: courseDetail.value.assignmentRequired,
     certificateEnabled: courseDetail.value.certificateEnabled,
   }
+  courseFormRef.value?.clearValidate()
 }
 
 async function submitCourse() {
+  try {
+    await courseFormRef.value?.validate()
+  } catch {
+    return
+  }
   courseDialog.saving = true
   try {
     if (courseDialog.isEdit && activeCourseId.value) {
@@ -249,7 +262,7 @@ function openEditLesson(lesson) {
     lessonType: lesson.lessonType,
     resourceUrl: lesson.resourceUrl,
     content: lesson.content,
-    durationSeconds: lesson.durationSeconds,
+    durationSeconds: Math.round(Number(lesson.durationSeconds || 0) / 60),
     previewEnabled: lesson.previewEnabled,
     sort: lesson.sort,
     status: lesson.status,
@@ -259,11 +272,15 @@ function openEditLesson(lesson) {
 async function submitLesson() {
   lessonDialog.saving = true
   try {
+    const payload = {
+      ...lessonDialog.form,
+      durationSeconds: Math.max(Number(lessonDialog.form.durationSeconds || 0), 0) * 60,
+    }
     if (lessonDialog.isEdit) {
-      await updateLessonApi(activeCourseId.value, lessonDialog.lessonId, lessonDialog.form)
+      await updateLessonApi(activeCourseId.value, lessonDialog.lessonId, payload)
       ElMessage.success('课时已更新')
     } else {
-      await createLessonApi(activeCourseId.value, lessonDialog.form)
+      await createLessonApi(activeCourseId.value, payload)
       ElMessage.success('课时已新增')
     }
     lessonDialog.visible = false
@@ -351,7 +368,7 @@ function statusText(status) {
               </el-tag>
             </div>
             <span>{{ course.categoryName || '未分类' }} · {{ statusText(course.status) }}</span>
-            <span>要求学时 {{ course.requiredHours }} / 课时 {{ course.totalLessons }}</span>
+            <span>要求时长 {{ course.requiredHours }} 小时 / 课时 {{ course.totalLessons }}</span>
           </button>
         </div>
       </aside>
@@ -374,7 +391,7 @@ function statusText(status) {
             <div><label>审核状态</label><span>{{ auditText(courseDetail.auditStatus) }}</span></div>
             <div><label>课程状态</label><span>{{ statusText(courseDetail.status) }}</span></div>
             <div><label>适用对象</label><span>{{ courseDetail.targetUser || '未填写' }}</span></div>
-            <div><label>要求学时</label><span>{{ courseDetail.requiredHours }}</span></div>
+            <div><label>要求时长</label><span>{{ courseDetail.requiredHours }} 小时</span></div>
           </div>
 
           <div class="summary-card app-card inner-card">
@@ -412,7 +429,7 @@ function statusText(status) {
                     <strong>{{ lesson.title }}</strong>
                     <span>
                       {{ ['视频', '文档', '图文'][lesson.lessonType - 1] || '未知类型' }} ·
-                      {{ lesson.durationSeconds || 0 }} 秒
+                      {{ Math.round(Number(lesson.durationSeconds || 0) / 60) }} 分钟
                     </span>
                   </div>
                   <div class="detail-actions">
@@ -429,11 +446,11 @@ function statusText(status) {
     </section>
 
     <el-dialog v-model="courseDialog.visible" :title="courseDialog.isEdit ? '编辑课程' : '新建课程'" width="720px">
-      <el-form label-position="top">
+      <el-form ref="courseFormRef" :model="courseDialog.form" :rules="courseRules" label-position="top">
         <div class="dialog-grid two-col">
-          <el-form-item label="课程标题"><el-input v-model="courseDialog.form.title" /></el-form-item>
-          <el-form-item label="课程分类">
-            <el-select v-model="courseDialog.form.categoryId" clearable>
+          <el-form-item label="课程标题" prop="title"><el-input v-model="courseDialog.form.title" /></el-form-item>
+          <el-form-item label="课程分类" prop="categoryId">
+            <el-select v-model="courseDialog.form.categoryId" placeholder="请选择课程分类" no-data-text="暂无课程分类" no-match-text="无匹配分类">
               <el-option v-for="item in categories" :key="item.id" :label="item.name" :value="item.id" />
             </el-select>
           </el-form-item>
@@ -443,7 +460,9 @@ function statusText(status) {
           <el-form-item label="封面地址"><el-input v-model="courseDialog.form.coverUrl" /></el-form-item>
         </div>
         <div class="dialog-grid three-col">
-          <el-form-item label="要求学时"><el-input-number v-model="courseDialog.form.requiredHours" :min="1" /></el-form-item>
+          <el-form-item label="课程时长">
+            <el-input :model-value="courseDialog.isEdit ? `${courseDialog.form.requiredHours} 小时（按课时总时长自动汇总）` : '保存课程后按课时总时长自动汇总'" disabled />
+          </el-form-item>
           <el-form-item label="考试要求"><el-switch v-model="courseDialog.form.examRequired" :active-value="1" :inactive-value="0" /></el-form-item>
           <el-form-item label="作业要求"><el-switch v-model="courseDialog.form.assignmentRequired" :active-value="1" :inactive-value="0" /></el-form-item>
         </div>
@@ -488,7 +507,7 @@ function statusText(status) {
         <el-form-item label="资源地址"><el-input v-model="lessonDialog.form.resourceUrl" /></el-form-item>
         <el-form-item label="图文内容"><el-input v-model="lessonDialog.form.content" type="textarea" :rows="4" /></el-form-item>
         <div class="dialog-grid three-col">
-          <el-form-item label="时长(秒)"><el-input-number v-model="lessonDialog.form.durationSeconds" :min="0" /></el-form-item>
+          <el-form-item label="时长(分钟)"><el-input-number v-model="lessonDialog.form.durationSeconds" :min="0" /></el-form-item>
           <el-form-item label="排序"><el-input-number v-model="lessonDialog.form.sort" :min="0" /></el-form-item>
           <el-form-item label="状态"><el-switch v-model="lessonDialog.form.status" :active-value="1" :inactive-value="0" /></el-form-item>
         </div>

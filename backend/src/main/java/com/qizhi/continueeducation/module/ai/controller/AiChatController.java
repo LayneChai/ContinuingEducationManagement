@@ -12,7 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 
@@ -23,9 +24,29 @@ public class AiChatController {
     private final AiChatService aiChatService;
 
     @PostMapping(value = "/api/student/ai/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<String>> streamChat(@Valid @RequestBody AiChatRequest request) {
+    public SseEmitter streamChat(@Valid @RequestBody AiChatRequest request) {
         StpUtil.checkRole(RoleCode.STUDENT);
-        return aiChatService.streamReply(StpUtil.getLoginIdAsLong(), request);
+        SseEmitter emitter = new SseEmitter(0L);
+        aiChatService.streamReply(StpUtil.getLoginIdAsLong(), request)
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe(event -> sendEvent(emitter, event), emitter::completeWithError, emitter::complete);
+        return emitter;
+    }
+
+    private void sendEvent(SseEmitter emitter, ServerSentEvent<String> event) {
+        try {
+            SseEmitter.SseEventBuilder builder = SseEmitter.event();
+            if (event.id() != null) {
+                builder.id(event.id());
+            }
+            if (event.event() != null) {
+                builder.name(event.event());
+            }
+            builder.data(event.data() == null ? "" : event.data());
+            emitter.send(builder);
+        } catch (Exception ex) {
+            emitter.completeWithError(ex);
+        }
     }
 
     @GetMapping("/api/student/ai/sessions")
